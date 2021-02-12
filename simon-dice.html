@@ -20,6 +20,9 @@
         margin: 0 auto;
         max-height: 60vh;
         max-width: 60vh;
+        -webkit-box-shadow: 0px 0px 26px 0px rgba(0,0,0,0.75);
+        -moz-box-shadow: 0px 0px 26px 0px rgba(0,0,0,0.75);
+        box-shadow: 0px 0px 26px 0px rgba(0,0,0,0.75);
       }
 
       .color {
@@ -82,6 +85,10 @@
       .hide {
         display: none;
       }
+
+      *{
+        font-family: 'Lobster Two', cursive;
+      }
     </style>
   </head>
   <body>
@@ -92,23 +99,30 @@
       <div id="verde" class="color verde right" data-color="verde"></div>
       <button id="btnEmpezar" class="btn-start" onclick="empezarJuego()">Empezar a jugar!</button>
     </div>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lobster+Two:ital,wght@1,700&display=swap" rel="stylesheet"><script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
     <script>
       const celeste = document.getElementById('celeste')
       const violeta = document.getElementById('violeta')
       const naranja = document.getElementById('naranja')
       const verde = document.getElementById('verde')
       const btnEmpezar = document.getElementById('btnEmpezar')
+      const ULTIMO_NIVEL = 10 
 
       class Juego {
         constructor() {
           this.inicializar()
           this.generarSecuencia()
-          this.siguienteNivel()
+          setTimeout(this.siguienteNivel, 500);
         }
 
         inicializar() {
-          btnEmpezar.classList.add('hide')
-          this.nivel = 7
+          this.elegirColor = this.elegirColor.bind(this)
+          this.siguienteNivel = this.siguienteNivel.bind(this)
+          this.inicializar = this.inicializar.bind(this)
+          this.toggleBtnEmpezar()
+          
+          this.nivel = 1
           this.colores = {
               celeste,
               violeta,
@@ -117,41 +131,113 @@
           }
         }
 
+        toggleBtnEmpezar(){
+          if (btnEmpezar.classList.contains('hide')) {
+            btnEmpezar.classList.remove('hide')
+          } else {
+            btnEmpezar.classList.add('hide')
+          }
+        }
+
         generarSecuencia(){
             this.secuencia = new Array(10).fill(0).map(n => Math.floor(Math.random() * 4))
         }
 
         siguienteNivel(){
+            this.subnivel = 0
             this.iluminarSecuencia()
+            this.agregarEventosClick()
         }
 
         transformarNumeroAColor(num){
             switch (num){
                 case 0:
-                    return 'celeste';
+                    return 'celeste'
                 case 1: 
-                    return 'violeta';
+                    return 'violeta'
                 case 2: 
-                    return 'verde';
+                    return 'verde'
                 case 3:
-                    return 'naranja';
+                    return 'naranja'
+            }
+        }
+
+        transformarColorANumero(num){
+            switch (num){
+                case 'celeste':
+                    return 0
+                case 'violeta': 
+                    return 1
+                case 'verde': 
+                    return 2
+                case 'naranja':
+                    return 3
             }
         }
 
         iluminarSecuencia(){
             for(var i = 0; i < this.nivel; i++){
-                const color = this.transformarNumeroAColor(this.secuencia[i]);
-                setTimeout(() => this.iluminarColor(color), 1000 * i);
+                const color = this.transformarNumeroAColor(this.secuencia[i])
+                setTimeout(() => this.iluminarColor(color), 500 * i)
             }
         }
 
         iluminarColor(color){
-            this.colores[color].classList.add('light');
-            setTimeout(() => this.apagarColor(color), 300);
+            this.colores[color].classList.add('light')
+            setTimeout(() => this.apagarColor(color), 300)
         }
 
         apagarColor(color){
-            this.colores[color].classList.remove('light');
+            this.colores[color].classList.remove('light')
+        }
+
+        agregarEventosClick(){
+          this.colores.celeste.addEventListener('click', this.elegirColor)
+          this.colores.verde.addEventListener('click', this.elegirColor)
+          this.colores.violeta.addEventListener('click', this.elegirColor)
+          this.colores.naranja.addEventListener('click', this.elegirColor)
+        }
+        
+        eliminarEventosClick(){
+          this.colores.celeste.removeEventListener('click', this.elegirColor)
+          this.colores.verde.removeEventListener('click', this.elegirColor)
+          this.colores.violeta.removeEventListener('click', this.elegirColor)
+          this.colores.naranja.removeEventListener('click', this.elegirColor)
+        }        
+
+        elegirColor(e){
+          const nombreColor = e.target.dataset.color
+          const numeroColor = this.transformarColorANumero(nombreColor)
+          this.iluminarColor(nombreColor)
+          if (numeroColor === this.secuencia[this.subnivel]) {
+            this.subnivel++
+            if (this.subnivel === this.nivel) {
+              this.nivel++
+              this.eliminarEventosClick()
+              if (this.nivel === (ULTIMO_NIVEL + 1)) {
+                this.ganoElJuego()
+              }
+              else{
+                setTimeout(this.siguienteNivel, 1000);
+              }
+            }
+          }
+          else{
+            this.perdioElJuego()
+          }  
+        }
+
+        ganoElJuego(){
+          swal('Ganaste!', 'Felicitaciones, llegaste al último nivel!', 'success')
+            .then(this.inicializar)
+        }
+
+        perdioElJuego(){
+          swal('Perdiste!', 'Sigue intentando! :S', 'error')
+            .then(() => {
+              this.eliminarEventosClick()
+              this.inicializar()
+            })
         }
       }
 
